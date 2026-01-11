@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
   View,
   Text,
@@ -7,17 +7,28 @@ import {
   TouchableOpacity,
   SafeAreaView,
 } from 'react-native';
-import { useNavigation } from '@react-navigation/native';
+import { useNavigation, useFocusEffect } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { RootStackParamList } from '../types';
+import { RootStackParamList, DailyFortune } from '../types';
 import { DailyFortuneCard } from '../components/DailyFortuneCard';
-import { getTodayFortune } from '../data/dailyFortune';
+import { getTodayFortune, loadProfile } from '../data/dailyFortune';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
-  const todayFortune = getTodayFortune();
+  const [todayFortune, setTodayFortune] = useState<DailyFortune>(getTodayFortune());
+
+  // 화면에 포커스될 때마다 프로필 다시 로드 (설정에서 돌아왔을 때)
+  useFocusEffect(
+    useCallback(() => {
+      const refreshFortune = async () => {
+        const profile = await loadProfile();
+        setTodayFortune(getTodayFortune(profile));
+      };
+      refreshFortune();
+    }, [])
+  );
 
   const features = [
     {

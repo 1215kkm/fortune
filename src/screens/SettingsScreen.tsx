@@ -7,6 +7,7 @@ import {
   SafeAreaView,
   TouchableOpacity,
   Switch,
+  TextInput,
   Platform,
   Alert,
 } from 'react-native';
@@ -18,7 +19,19 @@ interface Settings {
   alarmMinute: number;
 }
 
-const STORAGE_KEY = '@fortune_settings';
+export interface MyProfile {
+  name: string;
+  birthYear: string;
+  birthMonth: string;
+  birthDay: string;
+  birthHour: string;
+  birthMinute: string;
+  gender: 'male' | 'female';
+  isLunar: boolean;
+}
+
+const SETTINGS_KEY = '@fortune_settings';
+export const PROFILE_KEY = '@fortune_profile';
 
 export const SettingsScreen: React.FC = () => {
   const [settings, setSettings] = useState<Settings>({
@@ -27,13 +40,27 @@ export const SettingsScreen: React.FC = () => {
     alarmMinute: 0,
   });
 
+  const [profile, setProfile] = useState<MyProfile>({
+    name: '',
+    birthYear: '',
+    birthMonth: '',
+    birthDay: '',
+    birthHour: '',
+    birthMinute: '',
+    gender: 'male',
+    isLunar: false,
+  });
+
+  const [isProfileSaved, setIsProfileSaved] = useState(false);
+
   useEffect(() => {
     loadSettings();
+    loadProfile();
   }, []);
 
   const loadSettings = async () => {
     try {
-      const saved = await AsyncStorage.getItem(STORAGE_KEY);
+      const saved = await AsyncStorage.getItem(SETTINGS_KEY);
       if (saved) {
         setSettings(JSON.parse(saved));
       }
@@ -42,13 +69,68 @@ export const SettingsScreen: React.FC = () => {
     }
   };
 
+  const loadProfile = async () => {
+    try {
+      const saved = await AsyncStorage.getItem(PROFILE_KEY);
+      if (saved) {
+        setProfile(JSON.parse(saved));
+        setIsProfileSaved(true);
+      }
+    } catch (e) {
+      console.log('프로필 불러오기 실패');
+    }
+  };
+
   const saveSettings = async (newSettings: Settings) => {
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newSettings));
+      await AsyncStorage.setItem(SETTINGS_KEY, JSON.stringify(newSettings));
       setSettings(newSettings);
     } catch (e) {
       console.log('설정 저장 실패');
     }
+  };
+
+  const saveProfile = async () => {
+    if (!profile.name || !profile.birthYear || !profile.birthMonth || !profile.birthDay) {
+      Alert.alert('알림', '이름과 생년월일을 입력해주세요');
+      return;
+    }
+
+    try {
+      await AsyncStorage.setItem(PROFILE_KEY, JSON.stringify(profile));
+      setIsProfileSaved(true);
+      Alert.alert('저장 완료', '내 사주 정보가 저장되었습니다.\n오늘의 운세가 내 사주를 기반으로 계산됩니다.');
+    } catch (e) {
+      Alert.alert('오류', '저장에 실패했습니다');
+    }
+  };
+
+  const clearProfile = async () => {
+    Alert.alert(
+      '프로필 삭제',
+      '저장된 사주 정보를 삭제하시겠습니까?',
+      [
+        { text: '취소', style: 'cancel' },
+        {
+          text: '삭제',
+          style: 'destructive',
+          onPress: async () => {
+            await AsyncStorage.removeItem(PROFILE_KEY);
+            setProfile({
+              name: '',
+              birthYear: '',
+              birthMonth: '',
+              birthDay: '',
+              birthHour: '',
+              birthMinute: '',
+              gender: 'male',
+              isLunar: false,
+            });
+            setIsProfileSaved(false);
+          },
+        },
+      ]
+    );
   };
 
   const toggleAlarm = () => {
@@ -97,6 +179,152 @@ export const SettingsScreen: React.FC = () => {
           <Text style={styles.title}>설정</Text>
         </View>
 
+        {/* 내 사주 정보 */}
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>🌳 내 사주 정보</Text>
+          <Text style={styles.sectionDesc}>
+            저장하면 오늘의 운세가 내 사주를 기반으로 계산됩니다
+          </Text>
+
+          {/* 이름 */}
+          <View style={styles.inputRow}>
+            <Text style={styles.inputLabel}>이름</Text>
+            <TextInput
+              style={styles.textInput}
+              value={profile.name}
+              onChangeText={(text) => setProfile({ ...profile, name: text })}
+              placeholder="이름"
+              placeholderTextColor="#5A5A7A"
+            />
+          </View>
+
+          {/* 생년월일 */}
+          <View style={styles.inputRow}>
+            <Text style={styles.inputLabel}>생년월일</Text>
+            <View style={styles.dateInputRow}>
+              <TextInput
+                style={[styles.textInput, styles.dateInput]}
+                value={profile.birthYear}
+                onChangeText={(text) => setProfile({ ...profile, birthYear: text })}
+                placeholder="년"
+                placeholderTextColor="#5A5A7A"
+                keyboardType="number-pad"
+                maxLength={4}
+              />
+              <TextInput
+                style={[styles.textInput, styles.dateInputSmall]}
+                value={profile.birthMonth}
+                onChangeText={(text) => setProfile({ ...profile, birthMonth: text })}
+                placeholder="월"
+                placeholderTextColor="#5A5A7A"
+                keyboardType="number-pad"
+                maxLength={2}
+              />
+              <TextInput
+                style={[styles.textInput, styles.dateInputSmall]}
+                value={profile.birthDay}
+                onChangeText={(text) => setProfile({ ...profile, birthDay: text })}
+                placeholder="일"
+                placeholderTextColor="#5A5A7A"
+                keyboardType="number-pad"
+                maxLength={2}
+              />
+            </View>
+          </View>
+
+          {/* 태어난 시간 */}
+          <View style={styles.inputRow}>
+            <Text style={styles.inputLabel}>태어난 시간 (선택)</Text>
+            <View style={styles.timeInputRow}>
+              <TextInput
+                style={[styles.textInput, styles.timeInput]}
+                value={profile.birthHour}
+                onChangeText={(text) => setProfile({ ...profile, birthHour: text })}
+                placeholder="시"
+                placeholderTextColor="#5A5A7A"
+                keyboardType="number-pad"
+                maxLength={2}
+              />
+              <Text style={styles.timeSeparatorSmall}>:</Text>
+              <TextInput
+                style={[styles.textInput, styles.timeInput]}
+                value={profile.birthMinute}
+                onChangeText={(text) => setProfile({ ...profile, birthMinute: text })}
+                placeholder="분"
+                placeholderTextColor="#5A5A7A"
+                keyboardType="number-pad"
+                maxLength={2}
+              />
+            </View>
+          </View>
+
+          {/* 성별 */}
+          <View style={styles.inputRow}>
+            <Text style={styles.inputLabel}>성별</Text>
+            <View style={styles.toggleRow}>
+              <TouchableOpacity
+                style={[styles.toggleButton, profile.gender === 'male' && styles.toggleButtonActive]}
+                onPress={() => setProfile({ ...profile, gender: 'male' })}
+              >
+                <Text style={[styles.toggleText, profile.gender === 'male' && styles.toggleTextActive]}>
+                  남성
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.toggleButton, profile.gender === 'female' && styles.toggleButtonActive]}
+                onPress={() => setProfile({ ...profile, gender: 'female' })}
+              >
+                <Text style={[styles.toggleText, profile.gender === 'female' && styles.toggleTextActive]}>
+                  여성
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* 음력/양력 */}
+          <View style={styles.inputRow}>
+            <Text style={styles.inputLabel}>달력</Text>
+            <View style={styles.toggleRow}>
+              <TouchableOpacity
+                style={[styles.toggleButton, !profile.isLunar && styles.toggleButtonActive]}
+                onPress={() => setProfile({ ...profile, isLunar: false })}
+              >
+                <Text style={[styles.toggleText, !profile.isLunar && styles.toggleTextActive]}>
+                  양력
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[styles.toggleButton, profile.isLunar && styles.toggleButtonActive]}
+                onPress={() => setProfile({ ...profile, isLunar: true })}
+              >
+                <Text style={[styles.toggleText, profile.isLunar && styles.toggleTextActive]}>
+                  음력
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          {/* 저장/삭제 버튼 */}
+          <View style={styles.buttonRow}>
+            <TouchableOpacity style={styles.saveButton} onPress={saveProfile}>
+              <Text style={styles.saveButtonText}>
+                {isProfileSaved ? '수정하기' : '저장하기'}
+              </Text>
+            </TouchableOpacity>
+            {isProfileSaved && (
+              <TouchableOpacity style={styles.deleteButton} onPress={clearProfile}>
+                <Text style={styles.deleteButtonText}>삭제</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+
+          {isProfileSaved && (
+            <View style={styles.savedBadge}>
+              <Text style={styles.savedBadgeText}>✓ 저장됨</Text>
+            </View>
+          )}
+        </View>
+
         {/* 알림 설정 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>🔔 오늘의 운세 알림</Text>
@@ -120,7 +348,6 @@ export const SettingsScreen: React.FC = () => {
             <View style={styles.timePickerContainer}>
               <Text style={styles.timeLabel}>알림 시간</Text>
               <View style={styles.timePicker}>
-                {/* 시간 */}
                 <View style={styles.timeColumn}>
                   <TouchableOpacity
                     style={styles.timeButton}
@@ -141,7 +368,6 @@ export const SettingsScreen: React.FC = () => {
 
                 <Text style={styles.timeSeparator}>:</Text>
 
-                {/* 분 */}
                 <View style={styles.timeColumn}>
                   <TouchableOpacity
                     style={styles.timeButton}
@@ -170,15 +396,9 @@ export const SettingsScreen: React.FC = () => {
         {/* 앱 정보 */}
         <View style={styles.section}>
           <Text style={styles.sectionTitle}>ℹ️ 앱 정보</Text>
-
           <View style={styles.infoRow}>
             <Text style={styles.infoLabel}>버전</Text>
             <Text style={styles.infoValue}>1.0.0</Text>
-          </View>
-
-          <View style={styles.infoRow}>
-            <Text style={styles.infoLabel}>개발</Text>
-            <Text style={styles.infoValue}>운명의 거울</Text>
           </View>
         </View>
 
@@ -186,21 +406,16 @@ export const SettingsScreen: React.FC = () => {
         <View style={styles.honestBox}>
           <Text style={styles.honestTitle}>💬 솔직한 안내</Text>
           <Text style={styles.honestText}>
-            이 앱은 재미와 자기 성찰을 위한 것입니다.{'\n\n'}
-            • 운세로 중요한 결정을 하지 마세요{'\n'}
-            • 사주는 "운명"이 아닌 "경향성"입니다{'\n'}
-            • 당신의 선택이 운세보다 중요합니다{'\n\n'}
-            운세가 좋으면 참고하고,{'\n'}
-            나쁘면 무시하셔도 됩니다. 😊
+            저장된 사주 정보를 기반으로 오늘의 운세가 계산되지만,{'\n'}
+            이것은 전통적 해석 체계일 뿐 과학적 예측이 아닙니다.{'\n\n'}
+            재미로 참고하고, 중요한 결정은 스스로 내리세요.
           </Text>
         </View>
 
-        {/* 웹 알림 안내 */}
         {Platform.OS === 'web' && (
           <View style={styles.webNotice}>
             <Text style={styles.webNoticeText}>
-              ⚠️ 웹 버전에서는 푸시 알림이 제한됩니다.{'\n'}
-              앱 설치 시 정상적으로 알림을 받을 수 있습니다.
+              ⚠️ 웹 버전에서는 푸시 알림이 제한됩니다.
             </Text>
           </View>
         )}
@@ -216,6 +431,7 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 20,
+    paddingBottom: 40,
   },
   header: {
     marginBottom: 24,
@@ -235,7 +451,117 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: '700',
     color: '#E0E0FF',
+    marginBottom: 8,
+  },
+  sectionDesc: {
+    fontSize: 13,
+    color: '#8888AA',
     marginBottom: 16,
+  },
+  inputRow: {
+    marginBottom: 16,
+  },
+  inputLabel: {
+    fontSize: 14,
+    color: '#B0B0CC',
+    marginBottom: 8,
+  },
+  textInput: {
+    backgroundColor: '#252540',
+    borderRadius: 10,
+    padding: 12,
+    color: '#FFFFFF',
+    fontSize: 15,
+    borderWidth: 1,
+    borderColor: '#3D3D5C',
+  },
+  dateInputRow: {
+    flexDirection: 'row',
+    gap: 8,
+  },
+  dateInput: {
+    flex: 2,
+    textAlign: 'center',
+  },
+  dateInputSmall: {
+    flex: 1,
+    textAlign: 'center',
+  },
+  timeInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  timeInput: {
+    width: 60,
+    textAlign: 'center',
+  },
+  timeSeparatorSmall: {
+    fontSize: 18,
+    color: '#FFFFFF',
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  toggleButton: {
+    flex: 1,
+    backgroundColor: '#252540',
+    borderRadius: 10,
+    padding: 12,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#3D3D5C',
+  },
+  toggleButtonActive: {
+    backgroundColor: '#3D3D6E',
+    borderColor: '#7C4DFF',
+  },
+  toggleText: {
+    fontSize: 14,
+    color: '#8888AA',
+  },
+  toggleTextActive: {
+    color: '#FFFFFF',
+    fontWeight: '600',
+  },
+  buttonRow: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 8,
+  },
+  saveButton: {
+    flex: 1,
+    backgroundColor: '#7C4DFF',
+    borderRadius: 12,
+    padding: 14,
+    alignItems: 'center',
+  },
+  saveButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FFFFFF',
+  },
+  deleteButton: {
+    backgroundColor: '#3D3D5C',
+    borderRadius: 12,
+    padding: 14,
+    paddingHorizontal: 20,
+    alignItems: 'center',
+  },
+  deleteButtonText: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#FF6B6B',
+  },
+  savedBadge: {
+    marginTop: 12,
+    alignItems: 'center',
+  },
+  savedBadgeText: {
+    fontSize: 13,
+    color: '#4CAF50',
+    fontWeight: '600',
   },
   settingRow: {
     flexDirection: 'row',
