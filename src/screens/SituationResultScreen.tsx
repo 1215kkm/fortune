@@ -13,6 +13,7 @@ import { RootStackParamList } from '../types';
 import { getTodaySituationFortune } from '../data/situationFortune';
 import { EnvironmentReactionCard } from '../components/EnvironmentReactionCard';
 import { HonestAdviceCard } from '../components/HonestAdviceCard';
+import { AnimatedSection } from '../components/AnimatedSection';
 
 type RouteType = RouteProp<RootStackParamList, 'SituationResult'>;
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
@@ -39,68 +40,78 @@ export const SituationResultScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.situationIcon}>{situation.icon}</Text>
-          <Text style={styles.situationTitle}>{situation.title}</Text>
-          <Text style={styles.dateText}>{dateString}의 운세</Text>
-        </View>
+        <AnimatedSection delay={0} animationType="scale">
+          <View style={styles.header}>
+            <Text style={styles.situationIcon}>{situation.icon}</Text>
+            <Text style={styles.situationTitle}>{situation.title}</Text>
+            <Text style={styles.dateText}>{dateString}의 운세</Text>
+          </View>
+        </AnimatedSection>
 
         {/* 메인 결과 */}
-        <View style={styles.resultCard}>
-          <View style={styles.energyBadge}>
-            <Text style={styles.energyText}>{fortune.energy}</Text>
+        <AnimatedSection delay={150}>
+          <View style={styles.resultCard}>
+            <View style={styles.energyBadge}>
+              <Text style={styles.energyText}>{fortune.energy}</Text>
+            </View>
+            <Text style={styles.mainMessage}>{fortune.message}</Text>
+            <Text style={styles.detailText}>{fortune.detail}</Text>
           </View>
-          <Text style={styles.mainMessage}>{fortune.message}</Text>
-          <Text style={styles.detailText}>{fortune.detail}</Text>
-        </View>
+        </AnimatedSection>
 
         {/* 환경 반응 */}
-        <View style={styles.section}>
+        <AnimatedSection delay={300} style={styles.section}>
           <Text style={styles.sectionTitle}>🌍 환경 반응 경향</Text>
           <EnvironmentReactionCard reaction={fortune.환경반응} index={0} />
-        </View>
+        </AnimatedSection>
 
         {/* 솔직한 조언 */}
-        <View style={styles.section}>
+        <AnimatedSection delay={400} style={styles.section}>
           <Text style={styles.sectionTitle}>💬 솔직한 조언</Text>
           <HonestAdviceCard advice={fortune.솔직한조언} />
-        </View>
+        </AnimatedSection>
 
         {/* 원리 설명 */}
-        <View style={styles.principleBox}>
-          <Text style={styles.principleTitle}>🔬 이 결과의 원리</Text>
-          <Text style={styles.principleText}>
-            오늘 날짜({dateString})를 기반으로{'\n'}
-            상황({situation.title})에 맞는 조언을 선택했습니다.{'\n\n'}
-            <Text style={styles.highlight}>솔직한 한계:</Text>{'\n'}
-            • 이것은 "예측"이 아니라 "일반적 조언"입니다{'\n'}
-            • 날짜가 바뀌면 다른 결과가 나올 수 있습니다{'\n'}
-            • 결과가 마음에 안 들면 무시해도 됩니다
-          </Text>
-        </View>
+        <AnimatedSection delay={500}>
+          <View style={styles.principleBox}>
+            <Text style={styles.principleTitle}>🔬 이 결과의 원리</Text>
+            <Text style={styles.principleText}>
+              오늘 날짜({dateString})를 기반으로{'\n'}
+              상황({situation.title})에 맞는 조언을 선택했습니다.{'\n\n'}
+              <Text style={styles.highlight}>솔직한 한계:</Text>{'\n'}
+              • 이것은 "예측"이 아니라 "일반적 조언"입니다{'\n'}
+              • 날짜가 바뀌면 다른 결과가 나올 수 있습니다{'\n'}
+              • 결과가 마음에 안 들면 무시해도 됩니다
+            </Text>
+          </View>
+        </AnimatedSection>
 
         {/* 질문 예시 */}
-        <View style={styles.questionsBox}>
-          <Text style={styles.questionsTitle}>이런 질문에 대한 답이었어요</Text>
-          {situation.questions.map((q, i) => (
-            <Text key={i} style={styles.questionText}>• {q}</Text>
-          ))}
-        </View>
+        <AnimatedSection delay={600}>
+          <View style={styles.questionsBox}>
+            <Text style={styles.questionsTitle}>이런 질문에 대한 답이었어요</Text>
+            {situation.questions.map((q, i) => (
+              <Text key={i} style={styles.questionText}>• {q}</Text>
+            ))}
+          </View>
+        </AnimatedSection>
 
         {/* 버튼들 */}
-        <TouchableOpacity
-          style={styles.otherButton}
-          onPress={() => navigation.goBack()}
-        >
-          <Text style={styles.otherButtonText}>다른 상황 보기</Text>
-        </TouchableOpacity>
+        <AnimatedSection delay={700}>
+          <TouchableOpacity
+            style={styles.otherButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.otherButtonText}>다른 상황 보기</Text>
+          </TouchableOpacity>
 
-        <TouchableOpacity
-          style={styles.homeButton}
-          onPress={() => navigation.popToTop()}
-        >
-          <Text style={styles.homeButtonText}>홈으로</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.homeButton}
+            onPress={() => navigation.popToTop()}
+          >
+            <Text style={styles.homeButtonText}>홈으로</Text>
+          </TouchableOpacity>
+        </AnimatedSection>
       </ScrollView>
     </SafeAreaView>
   );

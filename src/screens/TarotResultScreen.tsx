@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import {
   View,
   Text,
@@ -6,6 +6,7 @@ import {
   ScrollView,
   SafeAreaView,
   TouchableOpacity,
+  Animated,
 } from 'react-native';
 import { useRoute, useNavigation, RouteProp } from '@react-navigation/native';
 import { RootStackParamList } from '../types';
@@ -20,6 +21,35 @@ export const TarotResultScreen: React.FC = () => {
   const navigation = useNavigation();
   const { reading } = route.params;
 
+  const [revealedCount, setRevealedCount] = useState(0);
+  const interpretationOpacity = useRef(new Animated.Value(0)).current;
+  const interpretationTranslate = useRef(new Animated.Value(30)).current;
+
+  // 모든 카드가 공개되면 해석 표시
+  useEffect(() => {
+    if (revealedCount === reading.cards.length) {
+      Animated.parallel([
+        Animated.timing(interpretationOpacity, {
+          toValue: 1,
+          duration: 500,
+          useNativeDriver: true,
+        }),
+        Animated.spring(interpretationTranslate, {
+          toValue: 0,
+          tension: 50,
+          friction: 8,
+          useNativeDriver: true,
+        }),
+      ]).start();
+    }
+  }, [revealedCount, reading.cards.length]);
+
+  const handleCardReveal = () => {
+    setRevealedCount((prev) => prev + 1);
+  };
+
+  const allCardsRevealed = revealedCount === reading.cards.length;
+
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
@@ -31,40 +61,88 @@ export const TarotResultScreen: React.FC = () => {
           </View>
         </View>
 
+        {/* 안내 메시지 */}
+        {!allCardsRevealed && (
+          <View style={styles.instructionBox}>
+            <Text style={styles.instructionText}>
+              ✨ 카드를 탭하여 하나씩 공개하세요 ({revealedCount}/{reading.cards.length})
+            </Text>
+          </View>
+        )}
+
         {/* 카드들 */}
         <View style={styles.cardsSection}>
           {reading.cards.map((drawnCard, index) => (
-            <TarotCardView key={index} drawnCard={drawnCard} />
+            <TarotCardView
+              key={index}
+              drawnCard={drawnCard}
+              initiallyRevealed={false}
+              onReveal={handleCardReveal}
+              delay={index * 200}
+            />
           ))}
         </View>
 
-        {/* 해석 */}
-        <View style={styles.interpretationSection}>
+        {/* 해석 - 모든 카드가 공개된 후에만 표시 */}
+        <Animated.View
+          style={[
+            styles.interpretationSection,
+            {
+              opacity: interpretationOpacity,
+              transform: [{ translateY: interpretationTranslate }],
+            },
+          ]}
+          pointerEvents={allCardsRevealed ? 'auto' : 'none'}
+        >
           <Text style={styles.sectionTitle}>📝 해석</Text>
           <View style={styles.interpretationBox}>
             <Text style={styles.interpretation}>{reading.interpretation}</Text>
           </View>
-        </View>
+        </Animated.View>
 
-        {/* 솔직한 조언 (있는 경우) */}
+        {/* 솔직한 조언 (있는 경우) - 모든 카드가 공개된 후에만 표시 */}
         {reading.솔직한조언 && (
-          <View style={styles.section}>
+          <Animated.View
+            style={[
+              styles.section,
+              {
+                opacity: interpretationOpacity,
+                transform: [{ translateY: interpretationTranslate }],
+              },
+            ]}
+          >
             <Text style={styles.sectionTitle}>💬 솔직한 한마디</Text>
             <HonestAdviceCard advice={reading.솔직한조언} />
-          </View>
+          </Animated.View>
         )}
 
         {/* 원리 설명 */}
-        <View style={styles.section}>
+        <Animated.View
+          style={[
+            styles.section,
+            {
+              opacity: interpretationOpacity,
+              transform: [{ translateY: interpretationTranslate }],
+            },
+          ]}
+        >
           <PrincipleCard
             title="왜 이 카드가 나왔을까?"
             content={reading.원리설명}
             icon="🔍"
           />
-        </View>
+        </Animated.View>
 
         {/* 안내 */}
-        <View style={styles.reminderBox}>
+        <Animated.View
+          style={[
+            styles.reminderBox,
+            {
+              opacity: interpretationOpacity,
+              transform: [{ translateY: interpretationTranslate }],
+            },
+          ]}
+        >
           <Text style={styles.reminderTitle}>🌟 기억하세요</Text>
           <Text style={styles.reminderText}>
             카드는 "답"이 아니라 "질문"을 던집니다.{'\n'}
@@ -72,15 +150,22 @@ export const TarotResultScreen: React.FC = () => {
             해석이 마음에 들지 않으면 무시해도 됩니다.{'\n'}
             당신의 직관이 카드보다 더 중요합니다.
           </Text>
-        </View>
+        </Animated.View>
 
         {/* 다시하기 버튼 */}
-        <TouchableOpacity
-          style={styles.againButton}
-          onPress={() => navigation.goBack()}
+        <Animated.View
+          style={{
+            opacity: interpretationOpacity,
+            transform: [{ translateY: interpretationTranslate }],
+          }}
         >
-          <Text style={styles.againButtonText}>다른 질문하기</Text>
-        </TouchableOpacity>
+          <TouchableOpacity
+            style={styles.againButton}
+            onPress={() => navigation.goBack()}
+          >
+            <Text style={styles.againButtonText}>다른 질문하기</Text>
+          </TouchableOpacity>
+        </Animated.View>
       </ScrollView>
     </SafeAreaView>
   );
@@ -123,6 +208,20 @@ const styles = StyleSheet.create({
   },
   cardsSection: {
     marginBottom: 24,
+  },
+  instructionBox: {
+    backgroundColor: '#2A2A4A',
+    borderRadius: 12,
+    padding: 14,
+    marginBottom: 16,
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: '#6366F1',
+  },
+  instructionText: {
+    color: '#B0B0DD',
+    fontSize: 14,
+    fontWeight: '500',
   },
   section: {
     marginBottom: 20,

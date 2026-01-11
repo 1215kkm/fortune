@@ -30,6 +30,9 @@ const screenOptions = {
   contentStyle: {
     backgroundColor: '#121220',
   },
+  // 화면 전환 애니메이션 설정
+  animation: 'slide_from_right' as const,
+  animationDuration: 300,
 };
 
 export default function App() {
@@ -62,6 +65,7 @@ export default function App() {
           options={{
             title: '분석 결과',
             headerBackTitle: '뒤로',
+            animation: 'fade_from_bottom',
           }}
         />
         <Stack.Screen
@@ -78,6 +82,7 @@ export default function App() {
           options={{
             title: '리딩 결과',
             headerBackTitle: '뒤로',
+            animation: 'fade_from_bottom',
           }}
         />
         <Stack.Screen
@@ -94,6 +99,7 @@ export default function App() {
           options={{
             title: '테스트 결과',
             headerBackTitle: '뒤로',
+            animation: 'fade_from_bottom',
           }}
         />
         <Stack.Screen
@@ -110,6 +116,7 @@ export default function App() {
           options={{
             title: '운세 결과',
             headerBackTitle: '뒤로',
+            animation: 'fade_from_bottom',
           }}
         />
         <Stack.Screen

@@ -13,6 +13,7 @@ import { RootStackParamList } from '../types';
 import { EnvironmentReactionCard } from '../components/EnvironmentReactionCard';
 import { HonestAdviceCard } from '../components/HonestAdviceCard';
 import { PrincipleCard } from '../components/PrincipleCard';
+import { AnimatedSection } from '../components/AnimatedSection';
 import { getAllTests } from '../services/questionService';
 
 type RouteType = RouteProp<RootStackParamList, 'TestResult'>;
@@ -28,20 +29,24 @@ export const TestResultScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.header}>
-          <Text style={styles.subtitle}>{testTitle}</Text>
-          <Text style={styles.title}>당신의 유형</Text>
-        </View>
+        <AnimatedSection delay={0} animationType="scale">
+          <View style={styles.header}>
+            <Text style={styles.subtitle}>{testTitle}</Text>
+            <Text style={styles.title}>당신의 유형</Text>
+          </View>
+        </AnimatedSection>
 
         {/* 결과 타입 */}
-        <View style={styles.resultCard}>
-          <Text style={styles.resultEmoji}>{result.type.솔직한조언.아이콘}</Text>
-          <Text style={styles.resultTitle}>{result.type.title}</Text>
-          <Text style={styles.resultDescription}>{result.type.description}</Text>
-        </View>
+        <AnimatedSection delay={150}>
+          <View style={styles.resultCard}>
+            <Text style={styles.resultEmoji}>{result.type.솔직한조언.아이콘}</Text>
+            <Text style={styles.resultTitle}>{result.type.title}</Text>
+            <Text style={styles.resultDescription}>{result.type.description}</Text>
+          </View>
+        </AnimatedSection>
 
         {/* 환경 반응 */}
-        <View style={styles.section}>
+        <AnimatedSection delay={300} style={styles.section}>
           <Text style={styles.sectionTitle}>🌍 환경별 반응 경향</Text>
           <Text style={styles.sectionSubtitle}>
             "당신은 항상 이렇다"가 아니라{'\n'}
@@ -50,36 +55,38 @@ export const TestResultScreen: React.FC = () => {
           {result.type.환경반응.map((reaction, index) => (
             <EnvironmentReactionCard key={index} reaction={reaction} index={index} />
           ))}
-        </View>
+        </AnimatedSection>
 
         {/* 솔직한 조언 */}
-        <View style={styles.section}>
+        <AnimatedSection delay={400} style={styles.section}>
           <Text style={styles.sectionTitle}>💬 솔직한 한마디</Text>
           <HonestAdviceCard advice={result.type.솔직한조언} />
-        </View>
+        </AnimatedSection>
 
         {/* 원리 설명 */}
-        <View style={styles.section}>
+        <AnimatedSection delay={500} style={styles.section}>
           <PrincipleCard
             title="이 결과가 나온 원리"
             content={result.원리설명}
             icon="🔍"
           />
-        </View>
+        </AnimatedSection>
 
         {/* 안내 */}
-        <View style={styles.reminderBox}>
-          <Text style={styles.reminderTitle}>🌟 기억하세요</Text>
-          <Text style={styles.reminderText}>
-            이 결과는 5개 질문에 대한 당신의 "자기 인식"을 반영합니다.{'\n'}
-            실제 행동과 다를 수 있고, 상황에 따라 달라집니다.{'\n\n'}
-            결과가 마음에 안 들면 무시해도 됩니다.{'\n'}
-            당신이 당신을 더 잘 압니다.
-          </Text>
-        </View>
+        <AnimatedSection delay={600}>
+          <View style={styles.reminderBox}>
+            <Text style={styles.reminderTitle}>🌟 기억하세요</Text>
+            <Text style={styles.reminderText}>
+              이 결과는 5개 질문에 대한 당신의 "자기 인식"을 반영합니다.{'\n'}
+              실제 행동과 다를 수 있고, 상황에 따라 달라집니다.{'\n\n'}
+              결과가 마음에 안 들면 무시해도 됩니다.{'\n'}
+              당신이 당신을 더 잘 압니다.
+            </Text>
+          </View>
+        </AnimatedSection>
 
         {/* 다른 테스트 */}
-        <View style={styles.section}>
+        <AnimatedSection delay={700} style={styles.section}>
           <Text style={styles.sectionTitle}>🧠 다른 테스트도 해볼까요?</Text>
           <View style={styles.otherTests}>
             {allTests
@@ -95,15 +102,17 @@ export const TestResultScreen: React.FC = () => {
                 </TouchableOpacity>
               ))}
           </View>
-        </View>
+        </AnimatedSection>
 
         {/* 홈으로 */}
-        <TouchableOpacity
-          style={styles.homeButton}
-          onPress={() => navigation.popToTop()}
-        >
-          <Text style={styles.homeButtonText}>홈으로 돌아가기</Text>
-        </TouchableOpacity>
+        <AnimatedSection delay={800}>
+          <TouchableOpacity
+            style={styles.homeButton}
+            onPress={() => navigation.popToTop()}
+          >
+            <Text style={styles.homeButtonText}>홈으로 돌아가기</Text>
+          </TouchableOpacity>
+        </AnimatedSection>
       </ScrollView>
     </SafeAreaView>
   );

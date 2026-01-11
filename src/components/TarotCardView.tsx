@@ -1,95 +1,247 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
 import { DrawnCard } from '../types';
 
 interface TarotCardViewProps {
   drawnCard: DrawnCard;
-  revealed?: boolean;
+  initiallyRevealed?: boolean;
   onReveal?: () => void;
+  delay?: number;
 }
 
 export const TarotCardView: React.FC<TarotCardViewProps> = ({
   drawnCard,
-  revealed = true,
+  initiallyRevealed = false,
   onReveal,
+  delay = 0,
 }) => {
   const { card, isReversed, position } = drawnCard;
+  const [revealed, setRevealed] = useState(initiallyRevealed);
 
-  if (!revealed) {
-    return (
-      <TouchableOpacity style={styles.hiddenCard} onPress={onReveal}>
-        <Text style={styles.hiddenSymbol}>🎴</Text>
-        <Text style={styles.hiddenText}>탭하여 공개</Text>
-        <Text style={styles.positionLabel}>{position}</Text>
-      </TouchableOpacity>
-    );
-  }
+  // 애니메이션 값
+  const flipAnim = useRef(new Animated.Value(0)).current;
+  const scaleAnim = useRef(new Animated.Value(0.8)).current;
+  const opacityAnim = useRef(new Animated.Value(0)).current;
+
+  // 초기 등장 애니메이션
+  useEffect(() => {
+    Animated.sequence([
+      Animated.delay(delay),
+      Animated.parallel([
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+        Animated.timing(opacityAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+      ]),
+    ]).start();
+  }, [delay]);
+
+  // 카드 뒤집기 핸들러
+  const handleFlip = () => {
+    if (revealed) return;
+
+    // 뒤집기 애니메이션
+    Animated.sequence([
+      // 먼저 살짝 위로 올리고 흔들기
+      Animated.timing(scaleAnim, {
+        toValue: 1.05,
+        duration: 150,
+        useNativeDriver: true,
+      }),
+      // 뒤집기
+      Animated.timing(flipAnim, {
+        toValue: 1,
+        duration: 400,
+        useNativeDriver: true,
+      }),
+      // 원래 크기로
+      Animated.spring(scaleAnim, {
+        toValue: 1,
+        tension: 50,
+        friction: 7,
+        useNativeDriver: true,
+      }),
+    ]).start(() => {
+      setRevealed(true);
+      onReveal?.();
+    });
+  };
+
+  // 뒤집기 인터폴레이션
+  const frontInterpolate = flipAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: ['0deg', '90deg', '90deg'],
+  });
+
+  const backInterpolate = flipAnim.interpolate({
+    inputRange: [0, 0.5, 1],
+    outputRange: ['90deg', '90deg', '0deg'],
+  });
+
+  const frontOpacity = flipAnim.interpolate({
+    inputRange: [0, 0.5],
+    outputRange: [1, 0],
+    extrapolate: 'clamp',
+  });
+
+  const backOpacity = flipAnim.interpolate({
+    inputRange: [0.5, 1],
+    outputRange: [0, 1],
+    extrapolate: 'clamp',
+  });
 
   return (
-    <View style={styles.container}>
-      <Text style={styles.positionLabel}>{position}</Text>
+    <Animated.View
+      style={[
+        styles.wrapper,
+        {
+          opacity: opacityAnim,
+          transform: [{ scale: scaleAnim }],
+        }
+      ]}
+    >
+      {/* 카드 뒷면 (숨겨진 상태) */}
+      <Animated.View
+        style={[
+          styles.cardContainer,
+          {
+            opacity: frontOpacity,
+            transform: [{ perspective: 1000 }, { rotateY: frontInterpolate }],
+            position: revealed ? 'absolute' : 'relative',
+          },
+        ]}
+        pointerEvents={revealed ? 'none' : 'auto'}
+      >
+        <TouchableOpacity
+          style={styles.hiddenCard}
+          onPress={handleFlip}
+          activeOpacity={0.8}
+        >
+          <Text style={styles.positionLabelHidden}>{position}</Text>
+          <View style={styles.cardBackDesign}>
+            <Text style={styles.hiddenSymbol}>✨</Text>
+            <View style={styles.mysteryPattern}>
+              <Text style={styles.patternText}>🌙</Text>
+              <Text style={styles.patternText}>⭐</Text>
+              <Text style={styles.patternText}>🌙</Text>
+            </View>
+            <Text style={styles.hiddenSymbol}>✨</Text>
+          </View>
+          <Text style={styles.hiddenText}>탭하여 공개</Text>
+        </TouchableOpacity>
+      </Animated.View>
 
-      <View style={[styles.card, isReversed && styles.reversedCard]}>
-        <Text style={[styles.symbol, isReversed && styles.reversedSymbol]}>
-          {card.symbol}
-        </Text>
-        <Text style={styles.name}>{card.nameKo}</Text>
-        <Text style={styles.nameEn}>{card.name}</Text>
-      </View>
+      {/* 카드 앞면 (공개된 상태) */}
+      <Animated.View
+        style={[
+          styles.cardContainer,
+          {
+            opacity: backOpacity,
+            transform: [{ perspective: 1000 }, { rotateY: backInterpolate }],
+          },
+        ]}
+        pointerEvents={revealed ? 'auto' : 'none'}
+      >
+        <View style={styles.container}>
+          <Text style={styles.positionLabel}>{position}</Text>
 
-      <View style={styles.directionBadge}>
-        <Text style={styles.directionText}>
-          {isReversed ? '역방향 ↓' : '정방향 ↑'}
-        </Text>
-      </View>
+          <View style={[styles.card, isReversed && styles.reversedCard]}>
+            <Text style={[styles.symbol, isReversed && styles.reversedSymbol]}>
+              {card.symbol}
+            </Text>
+            <Text style={styles.name}>{card.nameKo}</Text>
+            <Text style={styles.nameEn}>{card.name}</Text>
+          </View>
 
-      <View style={styles.meaningContainer}>
-        <Text style={styles.meaningLabel}>의미</Text>
-        <Text style={styles.meaning}>
-          {isReversed ? card.meaning.reversed : card.meaning.upright}
-        </Text>
-      </View>
+          <View style={styles.directionBadge}>
+            <Text style={styles.directionText}>
+              {isReversed ? '역방향 ↓' : '정방향 ↑'}
+            </Text>
+          </View>
 
-      <View style={styles.descriptionContainer}>
-        <Text style={styles.description}>{card.description}</Text>
-      </View>
+          <View style={styles.meaningContainer}>
+            <Text style={styles.meaningLabel}>의미</Text>
+            <Text style={styles.meaning}>
+              {isReversed ? card.meaning.reversed : card.meaning.upright}
+            </Text>
+          </View>
 
-      <View style={styles.elementBadge}>
-        <Text style={styles.elementText}>{card.element} 원소</Text>
-      </View>
-    </View>
+          <View style={styles.descriptionContainer}>
+            <Text style={styles.description}>{card.description}</Text>
+          </View>
+
+          <View style={styles.elementBadge}>
+            <Text style={styles.elementText}>{card.element} 원소</Text>
+          </View>
+        </View>
+      </Animated.View>
+    </Animated.View>
   );
 };
 
 const styles = StyleSheet.create({
+  wrapper: {
+    marginVertical: 10,
+  },
+  cardContainer: {
+    backfaceVisibility: 'hidden',
+  },
   container: {
     backgroundColor: '#1E1E2E',
     borderRadius: 20,
     padding: 20,
     alignItems: 'center',
-    marginVertical: 10,
     borderWidth: 1,
     borderColor: '#3D3D5C',
   },
   hiddenCard: {
     backgroundColor: '#2A2A4A',
     borderRadius: 20,
-    padding: 30,
+    padding: 24,
     alignItems: 'center',
-    marginVertical: 10,
     borderWidth: 2,
-    borderColor: '#4A4A7A',
-    borderStyle: 'dashed',
-    minHeight: 180,
+    borderColor: '#6366F1',
+    minHeight: 220,
     justifyContent: 'center',
   },
+  cardBackDesign: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: 20,
+  },
+  mysteryPattern: {
+    flexDirection: 'row',
+    marginVertical: 10,
+    gap: 10,
+  },
+  patternText: {
+    fontSize: 24,
+    opacity: 0.7,
+  },
   hiddenSymbol: {
-    fontSize: 50,
-    marginBottom: 10,
+    fontSize: 36,
+    opacity: 0.8,
   },
   hiddenText: {
-    color: '#8888AA',
+    color: '#9999CC',
     fontSize: 14,
+    fontWeight: '600',
+    marginTop: 10,
+  },
+  positionLabelHidden: {
+    fontSize: 14,
+    color: '#AB47BC',
+    fontWeight: '700',
+    marginBottom: 10,
+    textTransform: 'uppercase',
+    letterSpacing: 1,
   },
   positionLabel: {
     fontSize: 12,
