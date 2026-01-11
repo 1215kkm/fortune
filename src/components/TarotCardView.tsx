@@ -19,9 +19,9 @@ export const TarotCardView: React.FC<TarotCardViewProps> = ({
   const [revealed, setRevealed] = useState(initiallyRevealed);
 
   // 애니메이션 값
-  const flipAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.8)).current;
   const opacityAnim = useRef(new Animated.Value(0)).current;
+  const revealAnim = useRef(new Animated.Value(0)).current;
 
   // 초기 등장 애니메이션
   useEffect(() => {
@@ -43,58 +43,45 @@ export const TarotCardView: React.FC<TarotCardViewProps> = ({
     ]).start();
   }, [delay]);
 
-  // 카드 뒤집기 핸들러
-  const handleFlip = () => {
+  // 카드 공개 핸들러
+  const handleReveal = () => {
     if (revealed) return;
 
-    // 뒤집기 애니메이션
+    // 공개 애니메이션 (스케일 + 페이드)
     Animated.sequence([
-      // 먼저 살짝 위로 올리고 흔들기
       Animated.timing(scaleAnim, {
-        toValue: 1.05,
+        toValue: 1.1,
         duration: 150,
         useNativeDriver: true,
       }),
-      // 뒤집기
-      Animated.timing(flipAnim, {
-        toValue: 1,
-        duration: 400,
-        useNativeDriver: true,
-      }),
-      // 원래 크기로
-      Animated.spring(scaleAnim, {
-        toValue: 1,
-        tension: 50,
-        friction: 7,
-        useNativeDriver: true,
-      }),
+      Animated.parallel([
+        Animated.timing(revealAnim, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: true,
+        }),
+        Animated.spring(scaleAnim, {
+          toValue: 1,
+          tension: 50,
+          friction: 7,
+          useNativeDriver: true,
+        }),
+      ]),
     ]).start(() => {
       setRevealed(true);
       onReveal?.();
     });
   };
 
-  // 뒤집기 인터폴레이션
-  const frontInterpolate = flipAnim.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: ['0deg', '90deg', '90deg'],
-  });
-
-  const backInterpolate = flipAnim.interpolate({
-    inputRange: [0, 0.5, 1],
-    outputRange: ['90deg', '90deg', '0deg'],
-  });
-
-  const frontOpacity = flipAnim.interpolate({
-    inputRange: [0, 0.5],
+  // 공개 애니메이션 인터폴레이션
+  const hiddenOpacity = revealAnim.interpolate({
+    inputRange: [0, 1],
     outputRange: [1, 0],
-    extrapolate: 'clamp',
   });
 
-  const backOpacity = flipAnim.interpolate({
-    inputRange: [0.5, 1],
+  const revealedOpacity = revealAnim.interpolate({
+    inputRange: [0, 1],
     outputRange: [0, 1],
-    extrapolate: 'clamp',
   });
 
   return (
@@ -108,80 +95,65 @@ export const TarotCardView: React.FC<TarotCardViewProps> = ({
       ]}
     >
       {/* 카드 뒷면 (숨겨진 상태) */}
-      <Animated.View
-        style={[
-          styles.cardContainer,
-          {
-            opacity: frontOpacity,
-            transform: [{ perspective: 1000 }, { rotateY: frontInterpolate }],
-            position: revealed ? 'absolute' : 'relative',
-          },
-        ]}
-        pointerEvents={revealed ? 'none' : 'auto'}
-      >
-        <TouchableOpacity
-          style={styles.hiddenCard}
-          onPress={handleFlip}
-          activeOpacity={0.8}
-        >
-          <Text style={styles.positionLabelHidden}>{position}</Text>
-          <View style={styles.cardBackDesign}>
-            <Text style={styles.hiddenSymbol}>✨</Text>
-            <View style={styles.mysteryPattern}>
-              <Text style={styles.patternText}>🌙</Text>
-              <Text style={styles.patternText}>⭐</Text>
-              <Text style={styles.patternText}>🌙</Text>
+      {!revealed && (
+        <Animated.View style={[styles.cardContainer, { opacity: hiddenOpacity }]}>
+          <TouchableOpacity
+            style={styles.hiddenCard}
+            onPress={handleReveal}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.positionLabelHidden}>{position}</Text>
+            <View style={styles.cardBackDesign}>
+              <Text style={styles.hiddenSymbol}>✨</Text>
+              <View style={styles.mysteryPattern}>
+                <Text style={styles.patternText}>🌙</Text>
+                <Text style={styles.patternText}>⭐</Text>
+                <Text style={styles.patternText}>🌙</Text>
+              </View>
+              <Text style={styles.hiddenSymbol}>✨</Text>
             </View>
-            <Text style={styles.hiddenSymbol}>✨</Text>
-          </View>
-          <Text style={styles.hiddenText}>탭하여 공개</Text>
-        </TouchableOpacity>
-      </Animated.View>
+            <Text style={styles.hiddenText}>탭하여 공개</Text>
+          </TouchableOpacity>
+        </Animated.View>
+      )}
 
       {/* 카드 앞면 (공개된 상태) */}
-      <Animated.View
-        style={[
-          styles.cardContainer,
-          {
-            opacity: backOpacity,
-            transform: [{ perspective: 1000 }, { rotateY: backInterpolate }],
-          },
-        ]}
-        pointerEvents={revealed ? 'auto' : 'none'}
-      >
-        <View style={styles.container}>
-          <Text style={styles.positionLabel}>{position}</Text>
+      {(revealed || revealAnim._value > 0) && (
+        <Animated.View style={[styles.cardContainer, { opacity: revealed ? 1 : revealedOpacity }]}>
+          <View style={styles.container}>
+            <Text style={styles.positionLabel}>{position}</Text>
 
-          <View style={[styles.card, isReversed && styles.reversedCard]}>
-            <Text style={[styles.symbol, isReversed && styles.reversedSymbol]}>
-              {card.symbol}
-            </Text>
-            <Text style={styles.name}>{card.nameKo}</Text>
-            <Text style={styles.nameEn}>{card.name}</Text>
-          </View>
+            <View style={[styles.card, isReversed && styles.reversedCard]}>
+              <Text style={[styles.symbol, isReversed && styles.reversedSymbol]}>
+                {card.symbol}
+              </Text>
+              <Text style={styles.name}>{card.nameKo}</Text>
+              <Text style={styles.nameEn}>{card.name}</Text>
+            </View>
 
-          <View style={styles.directionBadge}>
-            <Text style={styles.directionText}>
-              {isReversed ? '역방향 ↓' : '정방향 ↑'}
-            </Text>
-          </View>
+            <View style={styles.directionBadge}>
+              <Text style={styles.directionText}>
+                {isReversed ? '역방향 ↓' : '정방향 ↑'}
+              </Text>
+            </View>
 
-          <View style={styles.meaningContainer}>
-            <Text style={styles.meaningLabel}>의미</Text>
-            <Text style={styles.meaning}>
-              {isReversed ? card.meaning.reversed : card.meaning.upright}
-            </Text>
-          </View>
+            <View style={styles.meaningContainer}>
+              <Text style={styles.meaningLabel}>의미</Text>
+              <Text style={styles.meaning}>
+                {isReversed ? card.meaning.reversed : card.meaning.upright}
+              </Text>
+            </View>
 
-          <View style={styles.descriptionContainer}>
-            <Text style={styles.description}>{card.description}</Text>
-          </View>
+            <View style={styles.descriptionContainer}>
+              <Text style={styles.description}>{card.description}</Text>
+            </View>
 
-          <View style={styles.elementBadge}>
-            <Text style={styles.elementText}>{card.element} 원소</Text>
+            <View style={styles.elementBadge}>
+              <Text style={styles.elementText}>{card.element} 원소</Text>
+            </View>
           </View>
-        </View>
-      </Animated.View>
+        </Animated.View>
+      )}
     </Animated.View>
   );
 };
@@ -191,7 +163,6 @@ const styles = StyleSheet.create({
     marginVertical: 10,
   },
   cardContainer: {
-    backfaceVisibility: 'hidden',
   },
   container: {
     backgroundColor: '#1E1E2E',
