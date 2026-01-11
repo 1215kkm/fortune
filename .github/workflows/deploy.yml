@@ -5,6 +5,7 @@ on:
     branches:
       - main
       - master
+      - claude/fortune-app-development-I1RrL
   workflow_dispatch:
 
 permissions:
