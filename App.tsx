@@ -22,9 +22,10 @@ const screenOptions = {
   headerStyle: {
     backgroundColor: '#1E1E2E',
   },
-  headerTintColor: '#FFFFFF',
+  headerTintColor: '#7C4DFF',
   headerTitleStyle: {
     fontWeight: '600' as const,
+    color: '#FFFFFF',
   },
   contentStyle: {
     backgroundColor: '#121220',
