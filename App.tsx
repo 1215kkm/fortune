@@ -32,7 +32,6 @@ const screenOptions = {
   },
   // 화면 전환 애니메이션 설정
   animation: 'slide_from_right' as const,
-  animationDuration: 300,
 };
 
 export default function App() {
