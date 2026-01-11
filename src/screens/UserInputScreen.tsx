@@ -14,6 +14,7 @@ import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList, UserInfo } from '../types';
 import { analyzeSaju } from '../services/sajuService';
+import { AnalysisLoading } from '../components/AnalysisLoading';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
@@ -29,6 +30,8 @@ export const UserInputScreen: React.FC = () => {
   const [gender, setGender] = useState<'male' | 'female'>('male');
   const [isLunar, setIsLunar] = useState(false);
   const [isTimeUnknown, setIsTimeUnknown] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [pendingUserInfo, setPendingUserInfo] = useState<UserInfo | null>(null);
 
   const handleAnalyze = () => {
     // 기본 검증
@@ -78,9 +81,23 @@ export const UserInputScreen: React.FC = () => {
       isLunar,
     };
 
-    const result = analyzeSaju(userInfo);
-    navigation.navigate('SajuResult', { userInfo, result });
+    // 로딩 화면 표시
+    setPendingUserInfo(userInfo);
+    setIsLoading(true);
   };
+
+  const handleLoadingComplete = () => {
+    if (pendingUserInfo) {
+      const result = analyzeSaju(pendingUserInfo);
+      setIsLoading(false);
+      navigation.navigate('SajuResult', { userInfo: pendingUserInfo, result });
+      setPendingUserInfo(null);
+    }
+  };
+
+  if (isLoading) {
+    return <AnalysisLoading type="saju" onComplete={handleLoadingComplete} />;
+  }
 
   return (
     <SafeAreaView style={styles.container}>

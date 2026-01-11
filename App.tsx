@@ -11,6 +11,9 @@ import {
   TarotResultScreen,
   QuestionTestScreen,
   TestResultScreen,
+  SituationFortuneScreen,
+  SituationResultScreen,
+  SettingsScreen,
 } from './src/screens';
 
 const Stack = createNativeStackNavigator<RootStackParamList>();
@@ -89,6 +92,30 @@ export default function App() {
           component={TestResultScreen}
           options={{
             title: '테스트 결과',
+            headerBackTitle: '뒤로',
+          }}
+        />
+        <Stack.Screen
+          name="SituationFortune"
+          component={SituationFortuneScreen}
+          options={{
+            title: '상황별 운세',
+            headerBackTitle: '뒤로',
+          }}
+        />
+        <Stack.Screen
+          name="SituationResult"
+          component={SituationResultScreen}
+          options={{
+            title: '운세 결과',
+            headerBackTitle: '뒤로',
+          }}
+        />
+        <Stack.Screen
+          name="Settings"
+          component={SettingsScreen}
+          options={{
+            title: '설정',
             headerBackTitle: '뒤로',
           }}
         />

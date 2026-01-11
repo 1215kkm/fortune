@@ -36,7 +36,7 @@ export interface EnvironmentReaction {
 export interface HonestAdvice {
   주제: string;
   내용: string;
-  타입: 'ambiguous' | 'choice_matters' | 'fortune_based';
+  타입: 'ambiguous' | 'choice_matters' | 'fortune_based' | 'hard_to_read';
   아이콘: string;
 }
 
@@ -118,6 +118,9 @@ export type RootStackParamList = {
   TarotResult: { reading: TarotReading };
   QuestionTest: { testId: string };
   TestResult: { result: TestResult; testTitle: string };
+  SituationFortune: undefined;
+  SituationResult: { situationId: string };
+  Settings: undefined;
 };
 
 export type MainTabParamList = {
@@ -126,3 +129,39 @@ export type MainTabParamList = {
   Tarot: undefined;
   Question: undefined;
 };
+
+// 상황별 운세 타입
+export interface SituationFortune {
+  id: string;
+  title: string;
+  icon: string;
+  description: string;
+  questions: string[];
+  fortunes: {
+    energy: string;
+    message: string;
+    detail: string;
+    환경반응: EnvironmentReaction;
+    솔직한조언: HonestAdvice;
+  }[];
+}
+
+// 오늘의 운세 타입
+export interface DailyFortune {
+  date: string;
+  overall: {
+    score: number;
+    message: string;
+    detail: string;
+  };
+  categories: {
+    name: string;
+    icon: string;
+    score: number;
+    message: string;
+  }[];
+  luckyItem: string;
+  luckyColor: string;
+  advice: string;
+  honestNote: string;
+}

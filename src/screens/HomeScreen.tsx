@@ -10,11 +10,14 @@ import {
 import { useNavigation } from '@react-navigation/native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { RootStackParamList } from '../types';
+import { DailyFortuneCard } from '../components/DailyFortuneCard';
+import { getTodayFortune } from '../data/dailyFortune';
 
 type NavigationProp = NativeStackNavigationProp<RootStackParamList>;
 
 export const HomeScreen: React.FC = () => {
   const navigation = useNavigation<NavigationProp>();
+  const todayFortune = getTodayFortune();
 
   const features = [
     {
@@ -34,6 +37,14 @@ export const HomeScreen: React.FC = () => {
       screen: 'TarotReading' as const,
     },
     {
+      id: 'situation',
+      title: '상황별 운세',
+      emoji: '🎯',
+      description: '새로운 시작, 약속, 중요한 결정 등',
+      color: '#FF9800',
+      screen: 'SituationFortune' as const,
+    },
+    {
       id: 'question',
       title: '질문형 운세',
       emoji: '🧠',
@@ -46,25 +57,27 @@ export const HomeScreen: React.FC = () => {
   return (
     <SafeAreaView style={styles.container}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        {/* 헤더 */}
         <View style={styles.header}>
-          <Text style={styles.title}>운명의 거울</Text>
+          <View style={styles.headerTop}>
+            <Text style={styles.title}>운명의 거울</Text>
+            <TouchableOpacity
+              style={styles.settingsButton}
+              onPress={() => navigation.navigate('Settings')}
+            >
+              <Text style={styles.settingsIcon}>⚙️</Text>
+            </TouchableOpacity>
+          </View>
           <Text style={styles.subtitle}>
             당신의 "팔자"가 아닌{'\n'}
             "환경 반응 경향"을 알아봅니다
           </Text>
         </View>
 
-        <View style={styles.philosophyCard}>
-          <Text style={styles.philosophyTitle}>🔮 이 앱의 철학</Text>
-          <Text style={styles.philosophyText}>
-            • "당신은 원래 이런 팔자" ❌{'\n'}
-            • "이 환경에 놓이면 이런 반응이 나오기 쉬움" ✅{'\n\n'}
-            솔직함이 우리의 차별점입니다.{'\n'}
-            "이건 사주로 보기 애매함",{'\n'}
-            "이건 운보다 선택 비중이 큼"도 말해드립니다.
-          </Text>
-        </View>
+        {/* 오늘의 운세 */}
+        <DailyFortuneCard fortune={todayFortune} compact />
 
+        {/* 주요 기능 */}
         <View style={styles.featuresContainer}>
           {features.map((feature) => (
             <TouchableOpacity
@@ -90,6 +103,17 @@ export const HomeScreen: React.FC = () => {
           ))}
         </View>
 
+        {/* 철학 카드 */}
+        <View style={styles.philosophyCard}>
+          <Text style={styles.philosophyTitle}>🔮 이 앱의 철학</Text>
+          <Text style={styles.philosophyText}>
+            • "당신은 원래 이런 팔자" ❌{'\n'}
+            • "이 환경에 놓이면 이런 반응이 나오기 쉬움" ✅{'\n\n'}
+            솔직함이 우리의 차별점입니다.
+          </Text>
+        </View>
+
+        {/* 솔직한 안내 */}
         <View style={styles.honestCard}>
           <Text style={styles.honestTitle}>💬 솔직한 안내</Text>
           <Text style={styles.honestText}>
@@ -113,43 +137,38 @@ const styles = StyleSheet.create({
     paddingBottom: 40,
   },
   header: {
-    alignItems: 'center',
-    marginBottom: 24,
+    marginBottom: 20,
     marginTop: 10,
   },
+  headerTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
   title: {
-    fontSize: 32,
+    fontSize: 28,
     fontWeight: '800',
     color: '#FFFFFF',
-    marginBottom: 12,
+  },
+  settingsButton: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: '#1E1E2E',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  settingsIcon: {
+    fontSize: 20,
   },
   subtitle: {
-    fontSize: 15,
-    color: '#B0B0CC',
-    textAlign: 'center',
-    lineHeight: 22,
-  },
-  philosophyCard: {
-    backgroundColor: '#1E1E2E',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 24,
-    borderWidth: 1,
-    borderColor: '#3D3D5C',
-  },
-  philosophyTitle: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#E0E0FF',
-    marginBottom: 12,
-  },
-  philosophyText: {
     fontSize: 14,
     color: '#B0B0CC',
-    lineHeight: 24,
+    lineHeight: 22,
   },
   featuresContainer: {
-    marginBottom: 24,
+    marginBottom: 20,
   },
   featureCard: {
     backgroundColor: '#1E1E2E',
@@ -187,6 +206,25 @@ const styles = StyleSheet.create({
   arrow: {
     fontSize: 20,
     color: '#5A5A7A',
+  },
+  philosophyCard: {
+    backgroundColor: '#1E1E2E',
+    borderRadius: 16,
+    padding: 18,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#3D3D5C',
+  },
+  philosophyTitle: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#E0E0FF',
+    marginBottom: 10,
+  },
+  philosophyText: {
+    fontSize: 13,
+    color: '#B0B0CC',
+    lineHeight: 22,
   },
   honestCard: {
     backgroundColor: '#2A2A3E',

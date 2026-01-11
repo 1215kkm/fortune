@@ -5,3 +5,6 @@ export { TarotReadingScreen } from './TarotReadingScreen';
 export { TarotResultScreen } from './TarotResultScreen';
 export { QuestionTestScreen } from './QuestionTestScreen';
 export { TestResultScreen } from './TestResultScreen';
+export { SituationFortuneScreen } from './SituationFortuneScreen';
+export { SituationResultScreen } from './SituationResultScreen';
+export { SettingsScreen } from './SettingsScreen';
